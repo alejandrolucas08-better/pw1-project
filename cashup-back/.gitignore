@@ -1,0 +1,32 @@
+# Dependências
+node_modules/
+jspm_packages/
+
+# Arquivos de Build/Compilação ( TypeScript usa a pasta 'dist' no seu script start )
+dist/
+out/
+
+# Variáveis de ambiente (Segurança)
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Arquivos do Sistema Operacional e Editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
