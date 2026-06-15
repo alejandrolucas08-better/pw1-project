@@ -93,3 +93,80 @@ export const getPortfolio = async (req: Request, res: Response): Promise<void> =
     res.status(500).json({ error: "Erro interno ao buscar carteira." });
   }
 };
+
+// Controlador para atualizar a quantidade de um ativo na carteira do usuário
+export const updateAsset = async (req: Request, res: Response): Promise<void>=> {
+  try {
+    const { ticker } = req.params
+    const {quantity} = req.body
+    const userId = 1
+
+    // Validações básicas para garantir que os dados necessários estão presentes e corretos
+    if (!ticker || typeof ticker != 'string'){
+      res.status(400).json({ error: "Parâmetro 'ticker' inválido ou ausente." });
+      return;
+    }
+
+    if (quantity === undefined || quantity <= 0){
+      res.status(400).json({error: 'A quantidade deve ser um número maior que zero.'})
+      return
+    }
+
+    const queryText = `
+      UPDATE user_assets 
+      SET quantity = $1 
+      WHERE user_id = $2 AND ticker = $3
+      RETURNING *;
+    `;
+
+    const result = await pool.query(queryText, [quantity, userId, ticker.toUpperCase().trim()]);
+
+    if (result.rowCount === 0) {
+      res.status(404).json({ error: "Ativo não encontrado na carteira deste usuário." });
+      return;
+    }
+
+    res.json({
+      message: 'Ativo atualizado com sucesso!',
+      asset: result.rows[0]
+    });
+  }catch (error){
+    console.error('Erro ao atulaizar ativo:',error);
+    res.status(500).json({ error: 'Erro interno ao atualizar ativo'});
+  }
+}
+
+// Controlador para deletar um ativo da carteira do usuário
+export const deleteAsset = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const {ticker} = req.params
+    const userId = 1
+
+
+    if (!ticker || typeof ticker !== 'string') {
+      res.status(400).json({ error: "Parâmetro 'ticker' inválido ou ausente." });
+      return;
+    }
+
+    const queryText = `
+      DELETE FROM user_assets 
+      WHERE user_id = $1 AND ticker = $2
+      RETURNING *;
+    `;
+
+    const result = await pool.query(queryText, [userId, ticker.toUpperCase().trim()])
+
+    if (result.rowCount === 0) {
+      res.status(404).json({error: "Ativo não encontrado na carteira deste usuário." });
+      return;
+    }
+
+    res.json({
+      message: `Ativo ${ticker.toUpperCase()} removido da carteira com sucesso!`,
+      deleted_asset: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Erro ao remover ativo:", error);
+    res.status(500).json({ error: "Erro interno ao remover ativo." });
+  }
+}
