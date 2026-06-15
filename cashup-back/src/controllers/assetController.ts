@@ -6,7 +6,12 @@ import { fetchMarketAsset } from "../services/brapiService";
 export const addAsset = async (req: Request, res: Response): Promise<void> => {
   try {
     const { ticker, quantity } = req.body;
-    const userId = 1; // ID do usuário autenticado (temporário)
+    const userId = req.userId;
+
+    if (!userId) {
+      res.status(401).json({ error: "Usuário não autenticado." });
+      return;
+    }
 
     if (!ticker || quantity == undefined) {
       res.status(400).json({
@@ -41,7 +46,12 @@ export const addAsset = async (req: Request, res: Response): Promise<void> => {
 // Controlador para buscar e consolidar a carteira do usuário
 export const getPortfolio = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = 1;
+    const userId = req.userId;
+
+    if (!userId) {
+      res.status(401).json({ error: "Usuário não autenticado." });
+      return;
+    }
     const userAssetResult = await pool.query(
       "SELECT ticker, quantity FROM user_assets WHERE user_id = $1 AND quantity > 0",
       [userId],
@@ -99,7 +109,12 @@ export const updateAsset = async (req: Request, res: Response): Promise<void>=> 
   try {
     const { ticker } = req.params
     const {quantity} = req.body
-    const userId = 1
+    const userId = req.userId;
+
+    if (!userId) {
+      res.status(401).json({ error: "Usuário não autenticado." });
+      return;
+    }
 
     // Validações básicas para garantir que os dados necessários estão presentes e corretos
     if (!ticker || typeof ticker != 'string'){
@@ -140,7 +155,12 @@ export const updateAsset = async (req: Request, res: Response): Promise<void>=> 
 export const deleteAsset = async (req: Request, res: Response): Promise<void> => {
   try {
     const {ticker} = req.params
-    const userId = 1
+    const userId = req.userId;
+
+    if (!userId) {
+      res.status(401).json({ error: "Usuário não autenticado." });
+      return;
+    }
 
 
     if (!ticker || typeof ticker !== 'string') {
