@@ -91,3 +91,31 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
+// Controlador para buscar os dados do usuário logado (Rota Protegida)
+export const getMe = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.userId;
+
+    if (!userId) {
+      res.status(401).json({ error: "Usuário não autenticado." });
+      return;
+    }
+
+    // Busca o usuário no banco, mas trazendo APENAS o id, name e email (nunca traga o password_hash aqui!)
+    const queryText = "SELECT id, name, email FROM users WHERE id = $1";
+    const result = await pool.query(queryText, [userId]);
+
+    if (result.rowCount === 0) {
+      res.status(404).json({ error: "Usuário não encontrado." });
+      return;
+    }
+
+    // Retorna os dados do usuário logado
+    res.json({
+      user: result.rows[0]
+    });
+  } catch (error) {
+    console.error("Erro ao buscar dados do perfil:", error);
+    res.status(500).json({ error: "Erro interno ao buscar perfil." });
+  }
+};
