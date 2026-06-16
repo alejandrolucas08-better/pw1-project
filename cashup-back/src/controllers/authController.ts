@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import pool from "../config/database";
 
+// Controlador para Registrar um Novo Usuário
 export const register = async (req:Request, res: Response): Promise<void> => {
     try {
         const { name, email, password } = req.body;
@@ -47,6 +48,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
 
+    // Validação básica de campos
     if (!email || !password) {
       res.status(400).json({ error: "E-mail e senha são obrigatórios." });
       return;
@@ -88,3 +90,4 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ error: "Erro interno ao realizar login." });
   }
 };
+

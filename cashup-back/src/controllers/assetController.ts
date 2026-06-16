@@ -20,6 +20,7 @@ export const addAsset = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    // A query abaixo utiliza o recurso de "upsert" do PostgreSQL para inserir um novo ativo ou atualizar a quantidade caso o ativo já exista na carteira do usuário
     const queryText = `
          INSERT INTO user_assets (user_id, ticker, quantity)
          VALUES ($1, $2, $3)
@@ -52,6 +53,8 @@ export const getPortfolio = async (req: Request, res: Response): Promise<void> =
       res.status(401).json({ error: "Usuário não autenticado." });
       return;
     }
+
+    // Busca os ativos do usuário no banco de dados
     const userAssetResult = await pool.query(
       "SELECT ticker, quantity FROM user_assets WHERE user_id = $1 AND quantity > 0",
       [userId],
@@ -127,6 +130,7 @@ export const updateAsset = async (req: Request, res: Response): Promise<void>=> 
       return
     }
 
+    // A query abaixo atualiza a quantidade de um ativo específico na carteira do usuário.
     const queryText = `
       UPDATE user_assets 
       SET quantity = $1 
@@ -162,12 +166,13 @@ export const deleteAsset = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
-
+    // Validações básicas para garantir que os dados necessários estão presentes e corretos
     if (!ticker || typeof ticker !== 'string') {
       res.status(400).json({ error: "Parâmetro 'ticker' inválido ou ausente." });
       return;
     }
 
+    // A query abaixo remove um ativo específico da carteira do usuário. O RETURNING * permite retornar os dados do ativo deletado para confirmação.
     const queryText = `
       DELETE FROM user_assets 
       WHERE user_id = $1 AND ticker = $2
