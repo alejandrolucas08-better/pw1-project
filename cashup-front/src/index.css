@@ -1,0 +1,48 @@
+/* Customização fina para os inputs monocromáticos das telas de Login e Registro */
+.custom-input {
+  transition: border-color 0.2s ease-in-out;
+}
+
+.custom-input:focus {
+  background-color: #161616 !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+  box-shadow: none !important; /* Remove o brilho azul padrão do Bootstrap */
+}
+
+/* Efeito sutil no botão principal branco (P&B) */
+.hover-opacity:hover {
+  opacity: 0.9;
+}
+.hover-opacity:active {
+  opacity: 0.8;
+}
+
+/* Efeitos de interações na Sidebar inspirados no ChatGPT */
+.hover-sidebar-item {
+  transition: all 0.15s ease-in-out;
+}
+
+.hover-sidebar-item:hover {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+  color: #ffffff !important;
+}
+
+/* Botão de Logout minimalista na Sidebar */
+.btn-logout-minimal {
+  transition: all 0.15s ease-in-out;
+}
+
+.btn-logout-minimal:hover {
+  background-color: rgba(255, 75, 75, 0.08) !important;
+  color: #ff4b4b !important;
+}
+
+/* Ajuste fino para scrollbars discretas no histórico de ativos */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
