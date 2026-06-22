@@ -23,7 +23,7 @@ export const SidebarLayout: React.FC<PropsWithChildren> = ({ children }) => {
           className="d-flex flex-column h-100 p-3 justify-content-between"
           style={{ 
             minWidth: "260px", 
-            backgroundColor: "#161616", // Alterado de bg-black para um cinza escuro estrutural
+            backgroundColor: "#161616", 
             borderColor: "rgba(255, 255, 255, 0.06)",
             borderRight: "1px solid" 
           }}
@@ -49,7 +49,6 @@ export const SidebarLayout: React.FC<PropsWithChildren> = ({ children }) => {
                 </div>
                 <div className="overflow-hidden text-nowrap" style={{ textOverflow: "ellipsis" }}>
                   <div className="fw-medium text-white" style={{ fontSize: "13px" }}>{user.name}</div>
-                  {/* Melhorado contraste de text-muted para text-white-50 */}
                   <div className="text-white-50" style={{ fontSize: "11px", opacity: 0.8 }}>{user.email}</div>
                 </div>
               </div>
@@ -58,7 +57,6 @@ export const SidebarLayout: React.FC<PropsWithChildren> = ({ children }) => {
             <hr className="my-3" style={{ borderColor: "rgba(255, 255, 255, 0.08)" }} />
 
             {/* Título da Listagem de Ativos */}
-            {/* Melhorado contraste trocando text-muted por text-white-50 */}
             <div className="text-white-50 small fw-semibold px-2 mb-2 text-uppercase" style={{ fontSize: "10px", letterSpacing: "1px", opacity: 0.6 }}>
               Ativos Recentes
             </div>
