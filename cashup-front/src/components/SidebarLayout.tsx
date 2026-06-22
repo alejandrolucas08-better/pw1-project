@@ -1,30 +1,32 @@
-import React from "react";
+import React, { type PropsWithChildren } from "react";
 import { Container, Row, Col, Nav, Button } from "react-bootstrap";
+import { Outlet, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { LogOut, Wallet } from "lucide-react";
-import { Link } from "react-router-dom"; 
 
-interface SidebarLayoutProps {
-  children: React.ReactNode;
-  currentPage: string;
-}
-
-export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children, currentPage }) => {
+export const SidebarLayout: React.FC<PropsWithChildren> = ({ children }) => {
   const { user, signOut } = useAuth();
-
   
+  // Obtém a rota atual internamente
+  const { pathname } = useLocation();
+
   const assetShortcuts = ["PETR4", "MXRF11", "BTC"];
 
   return (
-    <Container fluid className="p-0 bg-dark text-white vh-100 overflow-hidden" style={{ backgroundColor: "#0b0b0b" }}>
+    <Container fluid className="p-0 text-white vh-100 overflow-hidden" style={{ backgroundColor: "#121212" }}>
       <Row className="g-0 h-100">
         
         {/* Sidebar */}
         <Col 
           xs={3} 
           md={2} 
-          className="d-flex flex-column bg-black border-end h-100 p-3 justify-content-between"
-          style={{ minWidth: "260px", borderColor: "rgba(255, 255, 255, 0.08)" }}
+          className="d-flex flex-column h-100 p-3 justify-content-between"
+          style={{ 
+            minWidth: "260px", 
+            backgroundColor: "#161616", // Alterado de bg-black para um cinza escuro estrutural
+            borderColor: "rgba(255, 255, 255, 0.06)",
+            borderRight: "1px solid" 
+          }}
         >
           {/* Bloco Superior: Informações do Usuário e Perfil */}
           <div>
@@ -46,8 +48,9 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children, currentP
                   {user.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="overflow-hidden text-nowrap" style={{ textOverflow: "ellipsis" }}>
-                  <div className="fw-medium text-white-50" style={{ fontSize: "13px" }}>{user.name}</div>
-                  <div className="text-muted" style={{ fontSize: "11px" }}>{user.email}</div>
+                  <div className="fw-medium text-white" style={{ fontSize: "13px" }}>{user.name}</div>
+                  {/* Melhorado contraste de text-muted para text-white-50 */}
+                  <div className="text-white-50" style={{ fontSize: "11px", opacity: 0.8 }}>{user.email}</div>
                 </div>
               </div>
             )}
@@ -55,24 +58,25 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children, currentP
             <hr className="my-3" style={{ borderColor: "rgba(255, 255, 255, 0.08)" }} />
 
             {/* Título da Listagem de Ativos */}
-            <div className="text-muted small fw-semibold px-2 mb-2 text-uppercase" style={{ fontSize: "10px", letterSpacing: "1px", opacity: 0.6 }}>
+            {/* Melhorado contraste trocando text-muted por text-white-50 */}
+            <div className="text-white-50 small fw-semibold px-2 mb-2 text-uppercase" style={{ fontSize: "10px", letterSpacing: "1px", opacity: 0.6 }}>
               Ativos Recentes
             </div>
 
             {/* Listagem de Ativos */}
             <Nav className="flex-column gap-1 overflow-y-auto custom-scrollbar" style={{ maxHeight: "55vh" }}>
               {assetShortcuts.map((ticker) => {
-                const isActive = currentPage === `/dashboard/asset/${ticker}`;
+                const isActive = pathname === `/dashboard/asset/${ticker}`;
                 return (
                   <Link
                     key={ticker}
                     to="/dashboard"
-                    className={`text-decoration-none text-white-50 p-2 rounded d-flex align-items-center gap-2 transition-all hover-sidebar-item ${
-                      isActive ? "bg-white bg-opacity-5 text-white" : ""
+                    className={`text-decoration-none p-2 rounded d-flex align-items-center gap-2 transition-all hover-sidebar-item ${
+                      isActive ? "bg-white bg-opacity-5 text-white fw-medium" : "text-white-50"
                     }`}
                     style={{ fontSize: "13px" }}
                   >
-                    <span className="text-muted font-monospace" style={{ opacity: 0.4 }}>/</span>
+                    <span className="font-monospace text-white-50" style={{ opacity: 0.3 }}>/</span>
                     {ticker}
                   </Link>
                 );
@@ -84,7 +88,7 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children, currentP
           <div className="pt-2 border-top" style={{ borderColor: "rgba(255, 255, 255, 0.08)" }}>
             <Button 
               variant="outline-light" 
-              className="w-100 d-flex align-items-center justify-content-center gap-2 fw-medium border-0 text-muted btn-logout-minimal"
+              className="w-100 d-flex align-items-center justify-content-center gap-2 fw-medium border-0 text-white-50 btn-logout-minimal"
               style={{ fontSize: "13px" }}
               onClick={signOut}
             >
@@ -94,9 +98,10 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children, currentP
           </div>
         </Col>
 
-        {/* Painel Principal*/}
+        {/* Painel Principal */}
         <Col className="h-100 overflow-y-auto p-4" style={{ backgroundColor: "#121212" }}>
-          {children}
+          {/* Renderiza 'children' se passado diretamente, ou <Outlet /> para rotas aninhadas */}
+          {children || <Outlet />}
         </Col>
 
       </Row>

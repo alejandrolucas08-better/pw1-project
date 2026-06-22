@@ -1,16 +1,15 @@
+// src/routes/ProtectedRoute.tsx
+
 import React from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { Spinner } from "react-bootstrap";
 
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-}
-
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+// Rota protegida que verifica autenticação antes de renderizar as rotas filhas
+export const ProtectedRoute: React.FC = () => {
   const { isAuthenticated, loading } = useAuth();
 
-  // Enquanto valida o token via cookie/localStorage, exibe um loading minimalista
+  // Exibe loading apenas durante a hidratação inicial da sessão
   if (loading) {
     return (
       <div className="d-flex align-items-center justify-content-center bg-black vh-100">
@@ -22,10 +21,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
 
-  // Se não estiver logado, redireciona o usuário de volta para o login
+  // Redireciona para login se não autenticado
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  return <>{children}</>;
+  // Renderiza as rotas filhas (SidebarLayout -> Dashboard)
+  return <Outlet />;
 };

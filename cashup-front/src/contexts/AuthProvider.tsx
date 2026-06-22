@@ -1,52 +1,62 @@
-import React, { useState, useEffect} from "react";
+// src/contexts/AuthProvider.tsx
+
+import React, { useState, useEffect } from "react";
 import { request } from "../services/httpClient";
-import { type User, type LoginResponse, type MeResponse} from "../types/User";
+import { type User, type LoginResponse, type MeResponse } from "../types/user";
 import { AuthContext } from "./AuthContext";
 
-// O AuthProvider é o componente que vai envolver toda a aplicação e fornecer o contexto de autenticação para os outros componentes
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
 
-    // Ao montar o componente, verificamos se já existe um token no localStorage e tentamos carregar os dados do usuário
+    // Recupera sessão existente ao montar a aplicação
     useEffect(() => {
-        async function loadStorageData() {
-        const token = localStorage.getItem("@AppInvest:token");
+        const loadStorageData = async () => {
+            const token = localStorage.getItem("@AppInvest:token");
 
-        if (token) {
-            try {
-                const data = await request<MeResponse>("/auth/me", "GET");
-                setUser(data.user);
-            } catch (error) {
-                console.error("Erro ao carregar dados do usuário:", error);
-                localStorage.removeItem("@AppInvest:token");
-                setUser(null);
+            if (token) {
+                try {
+                    const data = await request<MeResponse>("/auth/me", "GET");
+                    setUser(data.user);
+                } catch (error) {
+                    // Token inválido/expirado: limpa e segue como não autenticado
+                    localStorage.removeItem("@AppInvest:token");
+                    setUser(null);
+                    
+                }
             }
-        }
-        setLoading(false);   
-    }
-    loadStorageData();
+            setLoading(false);
+        };
+
+        loadStorageData();
     }, []);
 
-    // Função para efetuar o login, que recebe as credenciais do formulário, faz a requisição para o backend e armazena o token e os dados do usuário
+    // Autentica, persiste token e carrega perfil do usuário
     const signIn = async (credentials: object) => {
-        const data = await request<LoginResponse>('/auth/login', 'POST', credentials);
+        // 1. Realiza login e obtém token
+        const loginData = await request<LoginResponse>('/auth/login', 'POST', credentials);
+        localStorage.setItem('@AppInvest:token', loginData.token);
 
-        localStorage.setItem('@AppInvest:token', data.token)
+        try {
+            // 2. Busca dados do usuário autenticado
+            const profile = await request<MeResponse>("/auth/me", "GET");
+            setUser(profile.user);
+        } catch (error) {
+            // Rollback: se /auth/me falhar, remove token para evitar estado inconsistente
+            localStorage.removeItem('@AppInvest:token');
+            throw error;
+        }
+    };
 
-        const profile = await request<MeResponse>("/auth/me", "GET");
-        setUser(profile.user);
-    }
-
-    // Função para efetuar o logout, que remove o token do localStorage e limpa os dados do usuário do estado
+    // Encerra sessão limpando token e estado
     const signOut = () => {
         localStorage.removeItem('@AppInvest:token');
         setUser(null);
-    }
+    };
 
     return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, loading, signIn, signOut }}>
-      {children}
-    </AuthContext.Provider>
-  );
+        <AuthContext.Provider value={{ user, isAuthenticated: !!user, loading, signIn, signOut }}>
+            {children}
+        </AuthContext.Provider>
+    );
 };

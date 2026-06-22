@@ -1,45 +1,37 @@
-import React from "react";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { SidebarLayout } from "../components/SidebarLayout";
+import { useAuth } from "../hooks/useAuth";
 
-// Importações das páginas
+// Páginas
 import { Login } from "../pages/Login";
 import { Register } from "../pages/Register";
 import { Dashboard } from "../pages/Dashboard";
 
-// Componente envelopador para páginas internas do painel
-function PrivateRouteWrapper({ children }: { children: React.ReactNode }) {
-  const location = useLocation();
-
-  return (
-    <ProtectedRoute>
-      <SidebarLayout currentPage={location.pathname}>
-        {children}
-      </SidebarLayout>
-    </ProtectedRoute>
-  );
-}
-
 export default function AppRoutes() {
+  // Obtém estado de autenticação para redirecionamento inteligente no fallback
+  const { isAuthenticated } = useAuth();
+
   return (
     <Routes>
-      {/* 1. ROTAS DE AUTENTICAÇÃO (PÚBLICAS) */}
+      {/* Rotas públicas de autenticação */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
-      {/* 2. ROTAS PRIVADAS (ENVOLVIDAS PELO LAYOUT DE IA) */}
-      <Route
-        path="/dashboard"
-        element={
-          <PrivateRouteWrapper>
-            <Dashboard />
-          </PrivateRouteWrapper>
-        }
-      />
+      {/* Rotas privadas aninhadas: ProtectedRoute valida sessão, SidebarLayout renderiza o layout */}
+      <Route element={<ProtectedRoute />}>
+        <Route element={<SidebarLayout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          
+          {/* Novas rotas privadas são adicionadas aqui sem repetir wrappers */}
+        </Route>
+      </Route>
 
-      {/* 3. ROTA DE FALLBACK / REDIRECIONAMENTO PADRÃO */}
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      {/* Fallback 404: redireciona baseado no estado de autenticação */}
+      <Route 
+        path="*" 
+        element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} 
+      />
     </Routes>
   );
 }
