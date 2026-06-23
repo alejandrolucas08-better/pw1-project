@@ -1,18 +1,21 @@
-// src/contexts/PortfolioProvider.tsx
-
 import React, { useState, useEffect, useCallback } from "react";
 import { request } from "../services/httpClient";
-import { type PortfolioResponse} from "../types/portfolio";
+import { type PortfolioResponse } from "../types/portfolio";
 import { PortfolioContext } from "./PortfolioContext";
+import { useAuth } from "../hooks/useAuth";
 
 export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
   const [portfolio, setPortfolio] = useState<PortfolioResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Inicializa loading baseado na existência do usuário
+  const [loading, setLoading] = useState(!user);
   const [error, setError] = useState<string | null>(null);
   const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
 
-  // Função para refresh manual (com feedback de loading)
+  // Função para refresh manual
   const refreshPortfolio = useCallback(async () => {
+    if (!user) return;
+
     setLoading(true);
     try {
       const data = await request<PortfolioResponse>("/portfolio", "GET");
@@ -23,10 +26,12 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
-  // Carga inicial com requisição inline (evita setState síncrono no effect)
+  // Carga inicial com requisição inline (apenas se há usuário)
   useEffect(() => {
+    if (!user) return; 
+
     const controller = new AbortController();
 
     request<PortfolioResponse>("/portfolio", "GET", { signal: controller.signal })
@@ -49,9 +54,8 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       });
 
     return () => controller.abort();
-  }, []);
+  }, [user]);
 
-  // Seleciona ativo para visualização
   const selectAsset = (ticker: string | null) => {
     setSelectedAsset(ticker);
   };

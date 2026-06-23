@@ -6,7 +6,7 @@ import { usePortfolio } from "../hooks/usePortfolio";
 import { LogOut, Wallet, Plus, Trash2 } from "lucide-react";
 import { AssetModal } from "./AssetModal";
 import { request } from "../services/httpClient";
-import { type Asset } from "../types/portfolio"; // Importar tipo Asset
+import { type Asset } from "../types/portfolio";
 
 export const SidebarLayout: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -14,7 +14,6 @@ export const SidebarLayout: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [hoveredAsset, setHoveredAsset] = useState<string | null>(null);
 
-  // Deleta ativo
   const handleDelete = async (ticker: string) => {
     if (!window.confirm(`Remover ${ticker} da carteira?`)) return;
 
@@ -27,12 +26,10 @@ export const SidebarLayout: React.FC = () => {
     }
   };
 
-  // Seleciona ativo para visualização
   const handleSelectAsset = (ticker: string) => {
     selectAsset(ticker);
   };
 
-  // Formata valores em BRL
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
@@ -41,15 +38,15 @@ export const SidebarLayout: React.FC = () => {
   };
 
   return (
-    <Container fluid className="p-0 bg-dark text-white vh-100 overflow-hidden" style={{ backgroundColor: "#0b0b0b" }}>
+    <Container fluid className="p-0 text-white vh-100 overflow-hidden" style={{ backgroundColor: "#0f0f0f" }}>
       <Row className="g-0 h-100">
         
         {/* Sidebar */}
         <Col 
           xs={3} 
           md={2} 
-          className="d-flex flex-column bg-black border-end h-100 p-3 justify-content-between"
-          style={{ minWidth: "260px", borderColor: "rgba(255, 255, 255, 0.08)" }}
+          className="d-flex flex-column border-end h-100 p-3 justify-content-between"
+          style={{ minWidth: "260px", backgroundColor: "#161616", borderColor: "rgba(255, 255, 255, 0.1)" }}
         >
           <div>
             {/* Logo */}
@@ -60,7 +57,7 @@ export const SidebarLayout: React.FC = () => {
 
             {/* Info do Usuário */}
             {user && (
-              <div className="d-flex align-items-center gap-2 p-2 rounded mb-3" style={{ backgroundColor: "rgba(255, 255, 255, 0.04)" }}>
+              <div className="d-flex align-items-center gap-2 p-2 rounded mb-3" style={{ backgroundColor: "rgba(255, 255, 255, 0.06)", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
                 <div 
                   className="rounded-circle d-flex align-items-center justify-content-center text-black fw-bold" 
                   style={{ width: "32px", height: "32px", backgroundColor: "#ffffff", fontSize: "13px" }}
@@ -68,38 +65,40 @@ export const SidebarLayout: React.FC = () => {
                   {user.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="overflow-hidden text-nowrap" style={{ textOverflow: "ellipsis" }}>
-                  <div className="fw-medium text-white-50" style={{ fontSize: "13px" }}>{user.name}</div>
-                  <div className="text-muted" style={{ fontSize: "11px" }}>{user.email}</div>
+                  <div className="fw-medium" style={{ fontSize: "13px", color: "rgba(255, 255, 255, 0.9)" }}>{user.name}</div>
+                  <div style={{ fontSize: "11px", color: "rgba(255, 255, 255, 0.5)" }}>{user.email}</div>
                 </div>
               </div>
             )}
 
             {/* Capital Total */}
-            <div className="p-3 rounded mb-3" style={{ backgroundColor: "rgba(255, 255, 255, 0.04)" }}>
-              <div className="text-muted small text-uppercase tracking-wider" style={{ fontSize: "10px", letterSpacing: "1px" }}>
+            <div className="p-3 rounded mb-3" style={{ backgroundColor: "rgba(255, 255, 255, 0.04)", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
+              <div style={{ fontSize: "10px", letterSpacing: "1px", color: "rgba(255, 255, 255, 0.5)" }} className="text-uppercase tracking-wider">
                 Capital Total
               </div>
               {loading ? (
                 <Spinner animation="border" size="sm" variant="light" className="mt-1" />
               ) : (
-                <div className="fw-bold text-white fs-5 mt-1">
+                <div className="fw-bold fs-5 mt-1 text-white">
                   {portfolio ? formatCurrency(portfolio.total_wallet_value) : "R$ 0,00"}
                 </div>
               )}
             </div>
 
-            <hr className="my-3" style={{ borderColor: "rgba(255, 255, 255, 0.08)" }} />
+            <hr className="my-3" style={{ borderColor: "rgba(255, 255, 255, 0.1)" }} />
 
             {/* Título da Lista de Ativos */}
             <div className="d-flex justify-content-between align-items-center mb-2 px-2">
-              <div className="text-muted small fw-semibold text-uppercase" style={{ fontSize: "10px", letterSpacing: "1px", opacity: 0.6 }}>
+              <div style={{ fontSize: "10px", letterSpacing: "1px", color: "rgba(255, 255, 255, 0.5)" }} className="fw-semibold text-uppercase">
                 Meus Ativos
               </div>
               <Button
                 variant="link"
                 size="sm"
-                className="p-0 text-white-50 hover-white"
+                className="p-0 d-flex align-items-center justify-content-center"
+                style={{ color: "rgba(255, 255, 255, 0.7)", width: "24px", height: "24px" }}
                 onClick={() => setShowModal(true)}
+                title="Adicionar ativo"
               >
                 <Plus size={16} strokeWidth={2.5} />
               </Button>
@@ -112,19 +111,34 @@ export const SidebarLayout: React.FC = () => {
                   <Spinner animation="border" size="sm" variant="light" />
                 </div>
               ) : !portfolio || portfolio.assets.length === 0 ? (
-                <div className="text-center py-3 text-muted small">
+                <div className="text-center py-3 small" style={{ color: "rgba(255, 255, 255, 0.4)" }}>
                   Nenhum ativo cadastrado
                 </div>
               ) : (
-                portfolio.assets.map((asset: Asset) => ( // Tipagem explícita
+                portfolio.assets.map((asset: Asset) => (
                   <div
                     key={asset.ticker}
                     className={`d-flex align-items-center justify-content-between p-2 rounded transition-all ${
-                      selectedAsset === asset.ticker ? "bg-white bg-opacity-10" : "hover-sidebar-item"
+                      selectedAsset === asset.ticker ? "" : ""
                     }`}
-                    style={{ cursor: "pointer", fontSize: "13px" }}
-                    onMouseEnter={() => setHoveredAsset(asset.ticker)}
-                    onMouseLeave={() => setHoveredAsset(null)}
+                    style={{ 
+                      cursor: "pointer", 
+                      fontSize: "13px",
+                      backgroundColor: selectedAsset === asset.ticker ? "rgba(255, 255, 255, 0.08)" : "transparent",
+                      border: selectedAsset === asset.ticker ? "1px solid rgba(255, 255, 255, 0.12)" : "1px solid transparent",
+                    }}
+                    onMouseEnter={(e) => {
+                      setHoveredAsset(asset.ticker);
+                      if (selectedAsset !== asset.ticker) {
+                        e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.04)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      setHoveredAsset(null);
+                      if (selectedAsset !== asset.ticker) {
+                        e.currentTarget.style.backgroundColor = "transparent";
+                      }
+                    }}
                     onClick={() => handleSelectAsset(asset.ticker)}
                   >
                     <div className="d-flex align-items-center gap-2">
@@ -132,26 +146,28 @@ export const SidebarLayout: React.FC = () => {
                         <img 
                           src={asset.logo_url} 
                           alt={asset.ticker} 
-                          className="rounded-circle bg-white"
-                          style={{ width: "24px", height: "24px", objectFit: "cover" }}
+                          className="rounded-circle"
+                          style={{ width: "24px", height: "24px", objectFit: "cover", backgroundColor: "#ffffff" }}
                         />
                       ) : (
-                        <div className="bg-secondary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center text-muted font-monospace fw-bold" style={{ width: "24px", height: "24px", fontSize: "10px" }}>
+                        <div className="rounded-circle d-flex align-items-center justify-content-center fw-bold" style={{ width: "24px", height: "24px", fontSize: "10px", backgroundColor: "rgba(255, 255, 255, 0.1)", color: "rgba(255, 255, 255, 0.7)" }}>
                           {asset.ticker.substring(0, 2)}
                         </div>
                       )}
-                      <span className="text-white font-monospace fw-medium">{asset.ticker}</span>
+                      <span className="font-monospace fw-medium text-white">{asset.ticker}</span>
                     </div>
                     
                     {hoveredAsset === asset.ticker && (
                       <Button
                         variant="link"
                         size="sm"
-                        className="p-0 text-danger hover-opacity"
+                        className="p-0 d-flex align-items-center justify-content-center"
+                        style={{ color: "#ff6b6b", width: "24px", height: "24px" }}
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDelete(asset.ticker);
                         }}
+                        title="Remover ativo"
                       >
                         <Trash2 size={14} />
                       </Button>
@@ -163,11 +179,11 @@ export const SidebarLayout: React.FC = () => {
           </div>
 
           {/* Botão de Sair */}
-          <div className="pt-2 border-top" style={{ borderColor: "rgba(255, 255, 255, 0.08)" }}>
+          <div className="pt-2 border-top" style={{ borderColor: "rgba(255, 255, 255, 0.1)" }}>
             <Button 
               variant="outline-light" 
-              className="w-100 d-flex align-items-center justify-content-center gap-2 fw-medium border-0 text-muted btn-logout-minimal"
-              style={{ fontSize: "13px" }}
+              className="w-100 d-flex align-items-center justify-content-center gap-2 fw-medium border-0 rounded-2"
+              style={{ fontSize: "13px", backgroundColor: "rgba(255, 255, 255, 0.04)", color: "rgba(255, 255, 255, 0.7)", border: "1px solid rgba(255, 255, 255, 0.08)" }}
               onClick={signOut}
             >
               <LogOut size={14} />
@@ -177,7 +193,7 @@ export const SidebarLayout: React.FC = () => {
         </Col>
 
         {/* Painel Principal */}
-        <Col className="h-100 overflow-y-auto p-4" style={{ backgroundColor: "#121212" }}>
+        <Col className="h-100 overflow-y-auto p-4" style={{ backgroundColor: "#0f0f0f" }}>
           <Outlet />
         </Col>
 
