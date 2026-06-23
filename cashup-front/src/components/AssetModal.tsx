@@ -31,16 +31,29 @@ export const AssetModal: React.FC<AssetModalProps> = ({ show, handleClose, onSuc
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    // Validação básica de segurança antes de disparar a API
+    const parsedQuantity = Number(quantity);
+    const parsedPrice = Number(price);
+
+    if (isNaN(parsedQuantity) || parsedQuantity <= 0) {
+      setError("A quantidade deve ser um número maior que zero.");
+      return;
+    }
+    if (isNaN(parsedPrice) || parsedPrice < 0) {
+      setError("O preço médio não pode ser negativo.");
+      return;
+    }
+
     setLoading(true);
 
     const payload = {
       ticker: ticker.toUpperCase().trim(),
-      quantity: Number(quantity),
-      average_price: Number(price),
+      quantity: parsedQuantity,
+      average_price: parsedPrice,
     };
 
     try {
-      // Altere o endpoint "/assets" de acordo com sua especificação de API backend
       await request("/assets", "POST", payload);
       onSuccess();
       onCloseAndClear();
@@ -52,7 +65,7 @@ export const AssetModal: React.FC<AssetModalProps> = ({ show, handleClose, onSuc
   };
 
   return (
-    <Modal show={show} onHide={onCloseAndClear} centered contentClassName="border-0 rounded-3 text-white" style={{ backgroundColor: "rgba(0,0,0,0.4)" }}>
+    <Modal show={show} onHide={onCloseAndClear} centered contentClassName="border-0 rounded-3 text-white" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
       <div className="p-4 rounded-3" style={{ backgroundColor: "#121212", border: "1px solid rgba(255, 255, 255, 0.05)" }}>
         
         <Modal.Header className="border-0 p-0 mb-4 d-flex justify-content-between align-items-center">
@@ -71,7 +84,6 @@ export const AssetModal: React.FC<AssetModalProps> = ({ show, handleClose, onSuc
           )}
 
           <Form onSubmit={handleSubmit}>
-            {/* Ticker do Ativo */}
             <Form.Group className="mb-3" controlId="assetTicker">
               <Form.Label className="text-white-50 small d-flex align-items-center gap-2 mb-1">
                 <Layers size={14} /> Código do Ativo (Ticker)
@@ -88,7 +100,6 @@ export const AssetModal: React.FC<AssetModalProps> = ({ show, handleClose, onSuc
               />
             </Form.Group>
 
-            {/* Quantidade */}
             <Form.Group className="mb-3" controlId="assetQuantity">
               <Form.Label className="text-white-50 small d-flex align-items-center gap-2 mb-1">
                 <Hash size={14} /> Quantidade
@@ -106,7 +117,6 @@ export const AssetModal: React.FC<AssetModalProps> = ({ show, handleClose, onSuc
               />
             </Form.Group>
 
-            {/* Preço Pago */}
             <Form.Group className="mb-4" controlId="assetPrice">
               <Form.Label className="text-white-50 small d-flex align-items-center gap-2 mb-1">
                 <DollarSign size={14} /> Preço Médio Pago (R$)

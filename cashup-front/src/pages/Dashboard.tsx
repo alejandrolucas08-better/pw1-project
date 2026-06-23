@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Row, Col, Table, Spinner, Alert, Button } from "react-bootstrap";
 import { request } from "../services/httpClient";
 import { Plus, RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
@@ -11,25 +11,21 @@ export const Dashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false); 
 
-  // Função reutilizável para refresh manual e pós-mutação
-  const fetchPortfolio = async (signal?: AbortSignal) => {
+  // 1. Função de Atualização Manual (Refresh/Mutação)
+  const handleRefresh = useCallback(async () => {
+    setLoading(true);
     try {
-      const data = await request<PortfolioResponse>("/portfolio", "GET", { signal });
+      const data = await request<PortfolioResponse>("/portfolio", "GET");
       setPortfolio(data);
       setError(null);
     } catch (err) {
-      if ((err as Error).name === "AbortError") return;
       setError((err as Error).message || "Não foi possível carregar os dados da carteira.");
     } finally {
-      if (!signal?.aborted) setLoading(false);
+      setLoading(false);
     }
-  };
+  }, []);
 
-  const handleRefresh = () => {
-    setLoading(true);
-    fetchPortfolio();
-  };
-
+  // 2. Efeito de Sincronização Inicial com o Backend
   useEffect(() => {
     const controller = new AbortController();
 
@@ -47,11 +43,13 @@ export const Dashboard: React.FC = () => {
         }
       })
       .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       });
 
     return () => controller.abort();
-  }, []);
+  }, []); 
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -64,14 +62,13 @@ export const Dashboard: React.FC = () => {
     return (
       <div className="d-flex align-items-center justify-content-center h-100" style={{ minHeight: "60vh" }}>
         <Spinner animation="border" variant="light" size="sm" className="me-2" />
-        <span className="text-muted small">Carregando patrimônio...</span>
+        <span className="text-white-50 small">Carregando patrimônio...</span>
       </div>
     );
   }
 
   return (
     <div className="animate-fade-in">
-      {/* Cabeçalho com ações */}
       <div className="d-flex align-items-center justify-content-between mb-5">
         <div>
           <h4 className="fw-bold text-white m-0 tracking-tight">Visão Geral</h4>
@@ -80,7 +77,7 @@ export const Dashboard: React.FC = () => {
         <div className="d-flex gap-2">
           <Button 
             variant="dark" 
-            className="bg-transparent border-secondary border-opacity-25 text-muted hover-white p-2 rounded-2"
+            className="bg-transparent border-secondary border-opacity-25 text-white-50 hover-white p-2 rounded-2"
             onClick={handleRefresh}
             disabled={loading}
           >
@@ -106,7 +103,6 @@ export const Dashboard: React.FC = () => {
 
       {portfolio && (
         <>
-          {/* Patrimônio total */}
           <Row className="mb-5">
             <Col xs={12}>
               <div className="p-4 border rounded-3 bg-black bg-opacity-40" style={{ borderColor: "rgba(255, 255, 255, 0.08)" }}>
@@ -120,7 +116,6 @@ export const Dashboard: React.FC = () => {
             </Col>
           </Row>
 
-          {/* Tabela de ativos */}
           <div className="border rounded-3 overflow-hidden bg-black bg-opacity-20" style={{ borderColor: "rgba(255, 255, 255, 0.05)" }}>
             <Table responsive borderless className="table-dark m-0 align-middle text-white table-hover-custom">
               <thead>
@@ -185,11 +180,10 @@ export const Dashboard: React.FC = () => {
         </>
       )}
 
-      {/* Inicialização do modal mantendo o estado sincronizado */}
       <AssetModal 
         show={showModal} 
         handleClose={() => setShowModal(false)} 
-        onSuccess={handleRefresh} 
+        onSuccess={handleRefresh} // Executa o recarregamento via handler seguro pós-mutação
       />
     </div>
   );
