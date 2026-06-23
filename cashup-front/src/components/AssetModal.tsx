@@ -7,24 +7,25 @@ interface AssetModalProps {
   show: boolean;
   handleClose: () => void;
   onSuccess: () => void;
+  editMode?: {
+    ticker: string;
+    quantity: string;
+    price: string;
+  } | null;
 }
 
-export const AssetModal: React.FC<AssetModalProps> = ({ show, handleClose, onSuccess }) => {
-  const [ticker, setTicker] = useState("");
-  const [quantity, setQuantity] = useState("");
-  const [price, setPrice] = useState("");
+export const AssetModal: React.FC<AssetModalProps> = ({ show, handleClose, onSuccess, editMode }) => {
+  const [ticker, setTicker] = useState(editMode?.ticker || "");
+  const [quantity, setQuantity] = useState(editMode?.quantity || "");
+  const [price, setPrice] = useState(editMode?.price || "");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const clearForm = () => {
+  const onCloseAndClear = () => {
     setTicker("");
     setQuantity("");
     setPrice("");
     setError(null);
-  };
-
-  const onCloseAndClear = () => {
-    clearForm();
     handleClose();
   };
 
@@ -32,7 +33,6 @@ export const AssetModal: React.FC<AssetModalProps> = ({ show, handleClose, onSuc
     e.preventDefault();
     setError(null);
 
-    // Validação básica de segurança antes de disparar a API
     const parsedQuantity = Number(quantity);
     const parsedPrice = Number(price);
 
@@ -47,18 +47,24 @@ export const AssetModal: React.FC<AssetModalProps> = ({ show, handleClose, onSuc
 
     setLoading(true);
 
-    const payload = {
-      ticker: ticker.toUpperCase().trim(),
-      quantity: parsedQuantity,
-      average_price: parsedPrice,
-    };
-
     try {
-      await request("/assets", "POST", payload);
+      if (editMode) {
+        await request(`/assets/${editMode.ticker}`, "PUT", {
+          quantity: parsedQuantity,
+          average_price: parsedPrice,
+        });
+      } else {
+        await request("/assets", "POST", {
+          ticker: ticker.toUpperCase().trim(),
+          quantity: parsedQuantity,
+          average_price: parsedPrice,
+        });
+      }
+
       onSuccess();
       onCloseAndClear();
     } catch (err) {
-      setError((err as Error).message || "Não foi possível adicionar o ativo.");
+      setError((err as Error).message || "Não foi possível salvar o ativo.");
     } finally {
       setLoading(false);
     }
@@ -70,8 +76,12 @@ export const AssetModal: React.FC<AssetModalProps> = ({ show, handleClose, onSuc
         
         <Modal.Header className="border-0 p-0 mb-4 d-flex justify-content-between align-items-center">
           <div>
-            <Modal.Title className="fw-bold h5 m-0 tracking-tight">Adicionar Ativo</Modal.Title>
-            <p className="text-white-50 small m-0 mt-1">Insira os detalhes da nova operação</p>
+            <Modal.Title className="fw-bold h5 m-0 tracking-tight">
+              {editMode ? "Editar Ativo" : "Adicionar Ativo"}
+            </Modal.Title>
+            <p className="text-white-50 small m-0 mt-1">
+              {editMode ? "Atualize os detalhes do ativo" : "Insira os detalhes da nova operação"}
+            </p>
           </div>
           <button type="button" className="btn-close btn-close-white shadow-none" onClick={onCloseAndClear} aria-label="Close" />
         </Modal.Header>
@@ -94,7 +104,7 @@ export const AssetModal: React.FC<AssetModalProps> = ({ show, handleClose, onSuc
                 value={ticker}
                 onChange={(e) => setTicker(e.target.value)}
                 required
-                disabled={loading}
+                disabled={loading || !!editMode}
                 className="text-white border-secondary border-opacity-25 py-2 px-3 shadow-none text-uppercase"
                 style={{ fontSize: "14px", backgroundColor: "#1A1A1A" }}
               />
@@ -152,7 +162,7 @@ export const AssetModal: React.FC<AssetModalProps> = ({ show, handleClose, onSuc
                 className="w-50 bg-white text-black border-0 rounded-2 py-2 fw-semibold d-flex align-items-center justify-content-center"
                 style={{ fontSize: "14px" }}
               >
-                {loading ? <Spinner animation="border" size="sm" variant="dark" /> : "Salvar Ativo"}
+                {loading ? <Spinner animation="border" size="sm" variant="dark" /> : editMode ? "Atualizar" : "Salvar Ativo"}
               </Button>
             </div>
           </Form>

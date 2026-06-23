@@ -1,190 +1,182 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { Row, Col, Table, Spinner, Alert, Button } from "react-bootstrap";
-import { request } from "../services/httpClient";
-import { Plus, RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
-import { type PortfolioResponse } from "../types/portfolio";
-import { AssetModal } from "../components/AssetModal"; 
+import React, { useState } from "react";
+import { Row, Col, Card, Alert, Button } from "react-bootstrap";
+import { usePortfolio } from "../hooks/usePortfolio";
+import { TrendingUp, TrendingDown, Edit2, BarChart3 } from "lucide-react";
+import { AssetModal } from "../components/AssetModal";
+import { type Asset } from "../types/portfolio";
 
 export const Dashboard: React.FC = () => {
-  const [portfolio, setPortfolio] = useState<PortfolioResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [showModal, setShowModal] = useState(false); 
+  const { portfolio, loading, error, selectedAsset, refreshPortfolio } = usePortfolio();
+  const [showEditModal, setShowEditModal] = useState(false);
 
-  // 1. Função de Atualização Manual (Refresh/Mutação)
-  const handleRefresh = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await request<PortfolioResponse>("/portfolio", "GET");
-      setPortfolio(data);
-      setError(null);
-    } catch (err) {
-      setError((err as Error).message || "Não foi possível carregar os dados da carteira.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const currentAsset: Asset | undefined = portfolio?.assets.find((asset: Asset) => asset.ticker === selectedAsset);
 
-  // 2. Efeito de Sincronização Inicial com o Backend
-  useEffect(() => {
-    const controller = new AbortController();
-
-    request<PortfolioResponse>("/portfolio", "GET", { signal: controller.signal })
-      .then((data) => {
-        if (!controller.signal.aborted) {
-          setPortfolio(data);
-          setError(null);
-        }
-      })
-      .catch((err) => {
-        if ((err as Error).name === "AbortError") return;
-        if (!controller.signal.aborted) {
-          setError((err as Error).message || "Não foi possível carregar os dados da carteira.");
-        }
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
-      });
-
-    return () => controller.abort();
-  }, []); 
-
-  const formatCurrency = (value: number) => {
+  // Formata valores em BRL com fallback para 0
+  const formatCurrency = (value: number | undefined | null) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",
-    }).format(value);
+    }).format(value || 0);
+  };
+
+  // Formata percentual com fallback para 0
+  const formatPercent = (value: number | undefined | null) => {
+    return (value || 0).toFixed(2);
+  };
+
+  // Formata número com fallback para 0
+  const formatNumber = (value: number | undefined | null) => {
+    return (value || 0).toLocaleString("pt-BR");
   };
 
   if (loading && !portfolio) {
     return (
       <div className="d-flex align-items-center justify-content-center h-100" style={{ minHeight: "60vh" }}>
-        <Spinner animation="border" variant="light" size="sm" className="me-2" />
-        <span className="text-white-50 small">Carregando patrimônio...</span>
+        <span className="text-white-50 small">Carregando...</span>
       </div>
     );
   }
 
   return (
     <div className="animate-fade-in">
-      <div className="d-flex align-items-center justify-content-between mb-5">
-        <div>
-          <h4 className="fw-bold text-white m-0 tracking-tight">Visão Geral</h4>
-          <p className="text-white-50 small m-0">Acompanhamento de ativos em tempo real</p>
-        </div>
-        <div className="d-flex gap-2">
-          <Button 
-            variant="dark" 
-            className="bg-transparent border-secondary border-opacity-25 text-white-50 hover-white p-2 rounded-2"
-            onClick={handleRefresh}
-            disabled={loading}
-          >
-            <RefreshCw size={16} className={loading ? "spin" : ""} />
-          </Button>
-          <Button 
-            variant="white" 
-            className="bg-white text-black fw-semibold d-flex align-items-center gap-2 px-3 py-2 rounded-2 border-0 hover-opacity"
-            style={{ fontSize: "13px" }}
-            onClick={() => setShowModal(true)} 
-          >
-            <Plus size={16} strokeWidth={2.5} />
-            Adicionar Ativo
-          </Button>
-        </div>
-      </div>
-
+      
       {error && (
         <Alert variant="dark" className="border-danger text-danger bg-transparent small mb-4">
           {error}
         </Alert>
       )}
 
-      {portfolio && (
-        <>
-          <Row className="mb-5">
-            <Col xs={12}>
-              <div className="p-4 border rounded-3 bg-black bg-opacity-40" style={{ borderColor: "rgba(255, 255, 255, 0.08)" }}>
-                <span className="text-white-50 small text-uppercase tracking-wider" style={{ fontSize: "11px" }}>
-                  Patrimônio Total Alocado
-                </span>
-                <h1 className="fw-bold tracking-tighter text-white mt-1 mb-0" style={{ fontSize: "3rem" }}>
-                  {formatCurrency(portfolio.total_wallet_value)}
-                </h1>
-              </div>
-            </Col>
-          </Row>
-
-          <div className="border rounded-3 overflow-hidden bg-black bg-opacity-20" style={{ borderColor: "rgba(255, 255, 255, 0.05)" }}>
-            <Table responsive borderless className="table-dark m-0 align-middle text-white table-hover-custom">
-              <thead>
-                <tr className="border-bottom text-white-50 small" style={{ fontSize: "12px", borderColor: "rgba(255, 255, 255, 0.08)" }}>
-                  <th className="py-3 px-4">Ativo</th>
-                  <th className="py-3">Qtd</th>
-                  <th className="py-3">Preço Médio</th>
-                  <th className="py-3">Preço Atual</th>
-                  <th className="py-3">Total Atual</th>
-                  <th className="py-3 text-end px-4">Retorno</th>
-                </tr>
-              </thead>
-              <tbody>
-                {portfolio.assets.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="text-center py-5 text-white-50 small">
-                      Nenhum ativo cadastrado na sua carteira ainda.
-                    </td>
-                  </tr>
-                ) : (
-                  portfolio.assets.map((asset) => {
-                    const isPositive = asset.profitability >= 0;
-                    return (
-                      <tr key={asset.id} className="border-bottom" style={{ borderColor: "rgba(255, 255, 255, 0.04)" }}>
-                        <td className="py-3 px-4">
-                          <div className="d-flex align-items-center gap-3">
-                            {asset.logo_url ? (
-                              <img 
-                                src={asset.logo_url} 
-                                alt={asset.ticker} 
-                                className="rounded-circle bg-white"
-                                style={{ width: "28px", height: "28px", objectFit: "cover" }}
-                              />
-                            ) : (
-                              <div className="bg-secondary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center text-white-50 font-monospace fw-bold" style={{ width: "28px", height: "28px", fontSize: "11px" }}>
-                                {asset.ticker.substring(0, 2)}
-                              </div>
-                            )}
-                            <div>
-                              <span className="fw-bold text-white font-monospace">{asset.ticker}</span>
-                              <div className="text-white-50 d-none d-sm-block" style={{ fontSize: "11px" }}>{asset.name}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="text-white-50 font-monospace">{asset.quantity}</td>
-                        <td className="text-white-50 font-monospace">{formatCurrency(asset.average_price)}</td>
-                        <td className="text-white font-monospace">{formatCurrency(asset.current_price)}</td>
-                        <td className="fw-medium font-monospace">{formatCurrency(asset.current_total_value)}</td>
-                        <td className={`text-end px-4 font-monospace ${isPositive ? "text-success" : "text-danger"}`}>
-                          <span className="d-inline-flex align-items-center gap-1 small fw-semibold">
-                            {isPositive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                            {asset.profitability.toFixed(2)}%
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </Table>
+      {/* Card Superior: Editar Ativo */}
+      <Card className="bg-black bg-opacity-40 border-0 mb-4" style={{ borderColor: "rgba(255, 255, 255, 0.08)" }}>
+        <Card.Body>
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h5 className="fw-bold text-white m-0">Gerenciar Ativo</h5>
+            {currentAsset && (
+              <Button
+                variant="outline-light"
+                size="sm"
+                onClick={() => setShowEditModal(true)}
+              >
+                <Edit2 size={14} className="me-1" />
+                Editar
+              </Button>
+            )}
           </div>
-        </>
-      )}
 
-      <AssetModal 
-        show={showModal} 
-        handleClose={() => setShowModal(false)} 
-        onSuccess={handleRefresh} // Executa o recarregamento via handler seguro pós-mutação
-      />
+          {!currentAsset ? (
+            <div className="text-center py-4 text-muted">
+              <p className="mb-0">Selecione um ativo na sidebar para gerenciar</p>
+            </div>
+          ) : (
+            <Row>
+              <Col md={6}>
+                <div className="mb-3">
+                  <small className="text-muted">Ticker</small>
+                  <div className="fw-bold text-white fs-4 font-monospace">{currentAsset.ticker}</div>
+                </div>
+                <div className="mb-3">
+                  <small className="text-muted">Nome</small>
+                  <div className="text-white-50">{currentAsset.name || "N/A"}</div>
+                </div>
+              </Col>
+              <Col md={6}>
+                <div className="mb-3">
+                  <small className="text-muted">Quantidade</small>
+                  <div className="fw-bold text-white fs-5">{currentAsset.quantity}</div>
+                </div>
+                <div className="mb-3">
+                  <small className="text-muted">Preço Médio</small>
+                  <div className="text-white-50">
+                    {currentAsset.average_price !== undefined 
+                      ? formatCurrency(currentAsset.average_price)
+                      : "N/A"}
+                  </div>
+                </div>
+              </Col>
+            </Row>
+          )}
+        </Card.Body>
+      </Card>
+
+      {/* Card Inferior: Dados de Mercado */}
+      <Card className="bg-black bg-opacity-40 border-0" style={{ borderColor: "rgba(255, 255, 255, 0.08)" }}>
+        <Card.Body>
+          <div className="d-flex align-items-center gap-2 mb-3">
+            <BarChart3 size={20} className="text-white" />
+            <h5 className="fw-bold text-white m-0">Dados de Mercado</h5>
+          </div>
+
+          {!currentAsset ? (
+            <div className="text-center py-4 text-muted">
+              <p className="mb-0">Selecione um ativo na sidebar para ver dados de mercado</p>
+            </div>
+          ) : (
+            <Row>
+              <Col md={4}>
+                <div className="mb-3">
+                  <small className="text-muted">Preço Atual</small>
+                  <div className="fw-bold text-white fs-4">{formatCurrency(currentAsset.current_price)}</div>
+                </div>
+              </Col>
+              <Col md={4}>
+                <div className="mb-3">
+                  <small className="text-muted">Variação</small>
+                  <div className={`fw-bold fs-5 ${(currentAsset.change_percent || 0) >= 0 ? "text-success" : "text-danger"}`}>
+                    {(currentAsset.change_percent || 0) >= 0 ? <TrendingUp size={16} className="me-1" /> : <TrendingDown size={16} className="me-1" />}
+                    {formatPercent(currentAsset.change_percent)}%
+                  </div>
+                </div>
+              </Col>
+              <Col md={4}>
+                <div className="mb-3">
+                  <small className="text-muted">Valor Total</small>
+                  <div className="fw-bold text-white fs-4">{formatCurrency(currentAsset.total_value)}</div>
+                </div>
+              </Col>
+              <Col md={12}>
+                <hr style={{ borderColor: "rgba(255, 255, 255, 0.08)" }} />
+                <Row>
+                  <Col md={3}>
+                    <small className="text-muted">Máxima do Dia</small>
+                    <div className="text-white-50">{formatCurrency(currentAsset.day_high)}</div>
+                  </Col>
+                  <Col md={3}>
+                    <small className="text-muted">Mínima do Dia</small>
+                    <div className="text-white-50">{formatCurrency(currentAsset.day_low)}</div>
+                  </Col>
+                  <Col md={3}>
+                    <small className="text-muted">Volume</small>
+                    <div className="text-white-50">{formatNumber(currentAsset.volume)}</div>
+                  </Col>
+                  <Col md={3}>
+                    <small className="text-muted">Rentabilidade</small>
+                    <div className={`fw-semibold ${(currentAsset.profitability || 0) >= 0 ? "text-success" : "text-danger"}`}>
+                      {currentAsset.profitability !== undefined 
+                        ? `${formatPercent(currentAsset.profitability)}%`
+                        : "N/A"}
+                    </div>
+                  </Col>
+                </Row>
+              </Col>
+            </Row>
+          )}
+        </Card.Body>
+      </Card>
+
+      {/* Modal de Edição */}
+      {showEditModal && currentAsset && (
+        <AssetModal
+          key={currentAsset.ticker}
+          show={showEditModal}
+          handleClose={() => setShowEditModal(false)}
+          onSuccess={refreshPortfolio}
+          editMode={{
+            ticker: currentAsset.ticker,
+            quantity: currentAsset.quantity.toString(),
+            price: currentAsset.average_price?.toString() || "0",
+          }}
+        />
+      )}
     </div>
   );
 };

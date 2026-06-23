@@ -1,11 +1,11 @@
 export interface MarketAsset {
   // Campos básicos para Ações e FIIs
-  ticker: string;       // Código do ativo (Chave primária no mercado)
-  name: string;         // Nome da empresa
-  current_price: number;// Preço atual de mercado
-  logo_url?: string;    // Link para a imagem do logo da empresa
-  updated_at: string;   // Horário da última atualização na bolsa
-  change: number;       // Variação em reais (ex: -0.58)
+  ticker: string;                 // Código do ativo (Chave primária no mercado)
+  name: string;                   // Nome da empresa
+  current_price: number;          // Preço atual de mercado
+  logo_url?: string;              // Link para a imagem do logo da empresa
+  updated_at: string;             // Horário da última atualização na bolsa
+  change: number;                 // Variação em reais (ex: -0.58)
   change_percent: number;         // Variação em % (ex: -1.39)
   day_high: number;               // Máxima do dia (ex: 41.53)
   day_low: number;                // Mínima do dia (ex: 40.82)
