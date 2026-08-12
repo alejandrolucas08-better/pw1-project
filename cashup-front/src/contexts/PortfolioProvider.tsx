@@ -54,7 +54,7 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       });
 
     return () => controller.abort();
-  }, [user]);
+  }, [user, refreshPortfolio]);
 
   const selectAsset = (ticker: string | null) => {
     setSelectedAsset(ticker);

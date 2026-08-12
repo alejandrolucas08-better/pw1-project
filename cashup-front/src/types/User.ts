@@ -27,6 +27,6 @@ export interface AuthContextData {
   user: User | null;
   isAuthenticated: boolean;
   loading: boolean;
-  signIn: (credentials: object) => Promise<void>;
+  signIn: (credentials: SignInCredentials) => Promise<void>;
   signOut: () => void;
 }

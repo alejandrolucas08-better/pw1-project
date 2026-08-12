@@ -4,6 +4,12 @@ import { TrendingUp, Mail, Lock } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { Link, useNavigate } from "react-router-dom";
 
+// Validação simples de email com regex
+const isValidEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
 export const Login: React.FC = () => {
   const { signIn } = useAuth();
   const navigate = useNavigate();
@@ -29,6 +35,19 @@ export const Login: React.FC = () => {
 
     setError(null);
     setLoading(true);
+
+    // Validações de formulário
+    if (!email.trim() || !password.trim()) {
+      setError("E-mail e senha são obrigatórios.");
+      setLoading(false);
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      setError("Formato de e-mail inválido.");
+      setLoading(false);
+      return;
+    }
 
     try {
       await signIn({ email, password });
