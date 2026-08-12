@@ -1,11 +1,20 @@
 import { Request, Response } from "express";
 import pool from "../config/database";
-import { fetchMarketAsset } from "../services/brapiService"; 
+import { fetchMarketAsset } from "../services/brapiService";
+
+interface AddAssetRequest {
+  ticker: string;
+  quantity: number;
+}
+
+interface UpdateAssetRequest {
+  quantity: number;
+}
 
 // Controlador para adicionar um ativo à carteira do usuário
 export const addAsset = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { ticker, quantity } = req.body;
+    const { ticker, quantity } = req.body as AddAssetRequest;
     const userId = req.userId;
 
     if (!userId) {
@@ -13,10 +22,15 @@ export const addAsset = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    if (!ticker || quantity == undefined) {
+    if (!ticker || quantity === undefined) {
       res.status(400).json({
         error: "O código de identificação (ex.: PETR4, MXRF11) e quantidade são necessários",
       });
+      return;
+    }
+
+    if (quantity <= 0) {
+      res.status(400).json({ error: "A quantidade deve ser um número maior que zero." });
       return;
     }
 
@@ -69,9 +83,9 @@ export const getPortfolio = async (req: Request, res: Response): Promise<void> =
 
     // Cria a lista de promessas para buscar os dados de mercado em paralelo
     const portfolioPromises = dbAssets.map(async (asset) => {
-      const maketData = await fetchMarketAsset(asset.ticker);
+      const marketData = await fetchMarketAsset(asset.ticker);
 
-      if (!maketData) {
+      if (!marketData) {
         return {
           ticker: asset.ticker,
           quantity: asset.quantity,
@@ -81,10 +95,10 @@ export const getPortfolio = async (req: Request, res: Response): Promise<void> =
         };
       }
 
-      const totalValue = asset.quantity * maketData.current_price;
+      const totalValue = asset.quantity * marketData.current_price;
 
       return {
-        ...maketData, // 2. Espalha dinamicamente os campos (traz P/L para ações, P/VP para FIIs e Market Cap para Cripto)
+        ...marketData, // Espalha dinamicamente os campos (traz P/L para ações, P/VP para FIIs e Market Cap para Cripto)
         ticker: asset.ticker,
         quantity: asset.quantity,
         total_value: Number(totalValue.toFixed(2)),
@@ -94,7 +108,7 @@ export const getPortfolio = async (req: Request, res: Response): Promise<void> =
     // Aguarda todas as requisições do Axios terminarem
     const portfolioAssets = await Promise.all(portfolioPromises);
 
-    // 3. Calcula o valor total da carteira de forma segura após a resolução das Promises
+    // Calcula o valor total da carteira de forma segura após a resolução das Promises
     const totalWalletValue = portfolioAssets.reduce((sum, asset) => sum + asset.total_value, 0);
 
     res.json({
@@ -108,10 +122,10 @@ export const getPortfolio = async (req: Request, res: Response): Promise<void> =
 };
 
 // Controlador para atualizar a quantidade de um ativo na carteira do usuário
-export const updateAsset = async (req: Request, res: Response): Promise<void>=> {
+export const updateAsset = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { ticker } = req.params
-    const {quantity} = req.body
+    const { ticker } = req.params;
+    const { quantity } = req.body as UpdateAssetRequest;
     const userId = req.userId;
 
     if (!userId) {
@@ -120,14 +134,14 @@ export const updateAsset = async (req: Request, res: Response): Promise<void>=> 
     }
 
     // Validações básicas para garantir que os dados necessários estão presentes e corretos
-    if (!ticker || typeof ticker != 'string'){
+    if (!ticker || typeof ticker !== 'string') {
       res.status(400).json({ error: "Parâmetro 'ticker' inválido ou ausente." });
       return;
     }
 
-    if (quantity === undefined || quantity <= 0){
-      res.status(400).json({error: 'A quantidade deve ser um número maior que zero.'})
-      return
+    if (quantity === undefined || quantity <= 0) {
+      res.status(400).json({ error: 'A quantidade deve ser um número maior que zero.' });
+      return;
     }
 
     // A query abaixo atualiza a quantidade de um ativo específico na carteira do usuário.
@@ -147,18 +161,18 @@ export const updateAsset = async (req: Request, res: Response): Promise<void>=> 
 
     res.json({
       message: 'Ativo atualizado com sucesso!',
-      asset: result.rows[0]
+      asset: result.rows[0],
     });
-  }catch (error){
-    console.error('Erro ao atulaizar ativo:',error);
-    res.status(500).json({ error: 'Erro interno ao atualizar ativo'});
+  } catch (error) {
+    console.error('Erro ao atualizar ativo:', error);
+    res.status(500).json({ error: 'Erro interno ao atualizar ativo' });
   }
-}
+};
 
 // Controlador para deletar um ativo da carteira do usuário
 export const deleteAsset = async (req: Request, res: Response): Promise<void> => {
   try {
-    const {ticker} = req.params
+    const { ticker } = req.params;
     const userId = req.userId;
 
     if (!userId) {
@@ -179,10 +193,10 @@ export const deleteAsset = async (req: Request, res: Response): Promise<void> =>
       RETURNING *;
     `;
 
-    const result = await pool.query(queryText, [userId, ticker.toUpperCase().trim()])
+    const result = await pool.query(queryText, [userId, ticker.toUpperCase().trim()]);
 
     if (result.rowCount === 0) {
-      res.status(404).json({error: "Ativo não encontrado na carteira deste usuário." });
+      res.status(404).json({ error: "Ativo não encontrado na carteira deste usuário." });
       return;
     }
 
@@ -194,4 +208,4 @@ export const deleteAsset = async (req: Request, res: Response): Promise<void> =>
     console.error("Erro ao remover ativo:", error);
     res.status(500).json({ error: "Erro interno ao remover ativo." });
   }
-}
+};
