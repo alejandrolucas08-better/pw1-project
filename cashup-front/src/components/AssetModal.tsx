@@ -33,6 +33,22 @@ export const AssetModal: React.FC<AssetModalProps> = ({ show, handleClose, onSuc
     e.preventDefault();
     setError(null);
 
+    // Validações básicas antes de parsear
+    if (!ticker.trim() && !editMode) {
+      setError("O ticker é obrigatório.");
+      return;
+    }
+
+    if (!quantity.trim()) {
+      setError("A quantidade é obrigatória.");
+      return;
+    }
+
+    if (!price.trim()) {
+      setError("O preço médio é obrigatório.");
+      return;
+    }
+
     const parsedQuantity = Number(quantity);
     const parsedPrice = Number(price);
 

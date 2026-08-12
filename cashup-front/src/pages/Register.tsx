@@ -4,6 +4,12 @@ import { TrendingUp, User, Mail, Lock } from "lucide-react";
 import { request } from "../services/httpClient";
 import { Link } from "react-router-dom";
 
+// Validação simples de email com regex
+const isValidEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
 export const Register: React.FC = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -37,8 +43,39 @@ export const Register: React.FC = () => {
     setSuccess(false);
     setLoading(true);
 
+    // Validações de formulário
+    if (!name.trim()) {
+      setError("Nome completo é obrigatório.");
+      setLoading(false);
+      return;
+    }
+
+    if (!email.trim()) {
+      setError("E-mail é obrigatório.");
+      setLoading(false);
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      setError("Formato de e-mail inválido.");
+      setLoading(false);
+      return;
+    }
+
+    if (!password.trim()) {
+      setError("Senha é obrigatória.");
+      setLoading(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("A senha deve ter no mínimo 6 caracteres.");
+      setLoading(false);
+      return;
+    }
+
     try {
-      await request("/auth/register", "POST", { name, email, password });
+      await request("/auth/register", "POST", { name: name.trim(), email: email.trim(), password });
       setSuccess(true);
       setName("");
       setEmail("");
