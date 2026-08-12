@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { request } from "../services/httpClient";
-import { type User, type LoginResponse, type MeResponse } from "../types/user";
+import { type User, type LoginResponse, type MeResponse } from "../types/User";
 import { AuthContext } from "./AuthContext";
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
